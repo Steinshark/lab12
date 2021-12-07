@@ -1,0 +1,7 @@
+new x := 3;
+write x;
+
+write x + 3;
+
+lambda x { write 2; };
+
