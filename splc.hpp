@@ -13,21 +13,23 @@ using namespace std;
 
 // forward declarations
 class Stmt;
-
+class Lambda;
 
 // Global variables
 extern colorout resout;
 extern colorout errout;
 extern Stmt* tree;
 
+// Holds everything pertinent for a future function call
 struct lambdaHolder{
 	string funName;
 	Stmt* body;
-
+  Lambda* lambda;
 	Frame* refFrame;
 	string varName;
 
 };
+
 // This class holds the context for AST evaluation
 // Right now, it just keeps track of register or label names to use
 class Context {
@@ -35,9 +37,9 @@ class Context {
     int regcount = 0;
     int brcount  = 0;
     int funcount = 0;
-    map<string,lambdaHolder*> lStructs;
-    
+
   public:
+    map<string,lambdaHolder*> lStructs;
     // returns a series of unique register names like
     // "%v1", "%v2", etc.
     string nextRegister() {
@@ -67,27 +69,7 @@ class Context {
 	    }
 	    return lH;
     }
-    void writeLambdas(){
-	    auto ptr = lStructs.begin();
-	    while(ptr != lStructs.end()){
-	    	//get the function name 
-		string fName = ptr->first;
-		//get the struct holding everything we need 
-		lambdaHolder* lambda = ptr->second;
-		//grab the bodyStmt of the lambda
-		Stmt* bodyStmt = lambda->body;
-		//grab the literal string variable name
-		string var = lambda->varName;
-		//build the register that holds the argument
-		string varName = "%" + fName + "var";
-		//start the defintion!!
-		resout << "define i64 @" << fName << " (i64 " << varName << "){" << endl;
-		bodyStmt->eval(lambda->refFrame,this);
-		bodyStmt->getNext()->exec(lambda->refFrame,this);
-		ptr++;
-	    
-	    }
-    }
+
 
 };
 

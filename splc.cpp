@@ -16,6 +16,7 @@ colorout resout(1, 'u');
 colorout errout(2, 'r');
 
 Stmt* tree = nullptr;
+void writeLambdas(Context*);
 
 int main(int argc, char** argv) {
   // 0, 1, and 2 correspond to stdin, stdout, and stderr respectively.
@@ -82,11 +83,37 @@ int main(int argc, char** argv) {
   // end LLVM main
   resout << "    ret i32 0" << endl
          << "}" << endl;
-  gcon.writeLambdas();
+  writeLambdas(&gcon);
   // cleanup
   if (argc >= 2) fclose(yyin);
   for (Stmt* node : program) delete node;
   yylex_destroy();
 
   return 0;
+}
+
+void writeLambdas(Context* con){
+
+  auto ptr = con->lStructs.begin();
+  while(ptr != con->lStructs.end()){
+    //get the function name
+    string fName = ptr->first;
+    //get the struct holding everything we need
+    lambdaHolder* lambda = ptr->second;
+    //grab the bodyStmt of the lambda
+    Stmt* bodyStmt = lambda->body;
+    //grab the literal string variable name
+    string var = lambda->varName;
+    //build the register that holds the argument
+    string varName = "%" + fName + "var";
+    //start the defintion!!
+    resout << "define i64 @" << fName << " (i64 " << varName << "){" << endl;
+    bodyStmt->exec(lambda->refFrame,con);
+    bodyStmt->getNext()->exec(lambda->refFrame,con);
+    //TEMP
+    resout << "    ret i64 0\n";
+    //TEMP
+    resout << "}\n";
+    ptr++;
+      }
 }

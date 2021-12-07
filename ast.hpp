@@ -640,20 +640,23 @@ class Lambda :public Exp {
     Stmt* getBody() { return body; }
 
     string eval(Frame* ST, Context* con){
-    //eval lambda adds to list of lambdas that all get written
-	//at the end;
-	string fName = con->nextFunction();
-	string lambdaPtrReg = con->nextRegister();
-	resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
+      //eval lambda adds to list of lambdas that all get written
+      //at the end;
+      string fName = con->nextFunction();
+      string lambdaPtrReg = con->nextRegister();
+      resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
-	//save this info for later 
-	lambdaHolder* lH = new lambdaHolder;
-	lH->funName = fName;
-        lH->body = body;
-        lH->refFrame = ST;
-	lH->varName = var->getVal();
-        con->bindLambda(fName,lH);   
-	return lambdaPtrReg;
+      //save this info for later
+      lambdaHolder* lH = new lambdaHolder;
+      lH->funName = fName;
+      lH->body = body;
+      lH->refFrame = ST;
+      lH->varName = var->getVal();
+      lH->lambda = this;
+
+      //add the function-struct pair to the map
+      con->bindLambda(fName,lH);
+      return lambdaPtrReg;
     }
 };
 

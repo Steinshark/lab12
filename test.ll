@@ -23,4 +23,10 @@ define i32 @main() {
     %v7 = ptrtoint i64(i64)* @fun1 to i64
     ret i32 0
 }
-    CREATING LAMBDA fun1
+define i64 @fun1 (i64 %fun1var){
+
+;Building write stmt
+    %v8 = bitcast [5 x i8]* @pfmt to i8*
+    call i32(i8*,...) @printf(i8* %v8, i64 2)
+    ret i64 0
+}
