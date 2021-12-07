@@ -106,10 +106,13 @@ void writeLambdas(Context* con){
     string var = lambda->varName;
     //build the register that holds the argument
     string varName = "%" + fName + "var";
+    //Get the Frame
+    Frame* frame = lambda->refFrame;
     //start the defintion!!
     resout << "define i64 @" << fName << " (i64 " << varName << "){" << endl;
-    bodyStmt->exec(lambda->refFrame,con);
-    bodyStmt->getNext()->exec(lambda->refFrame,con);
+    frame->bind(var,varName);
+    bodyStmt->exec(frame,con);
+    bodyStmt->getNext()->exec(frame,con);
     //TEMP
     resout << "    ret i64 0\n";
     //TEMP

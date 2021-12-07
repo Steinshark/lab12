@@ -646,6 +646,7 @@ class Lambda :public Exp {
       string lambdaPtrReg = con->nextRegister();
       resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
+      //ST->bind(var->getVal(),var )
       //save this info for later
       lambdaHolder* lH = new lambdaHolder;
       lH->funName = fName;
@@ -656,6 +657,7 @@ class Lambda :public Exp {
 
       //add the function-struct pair to the map
       con->bindLambda(fName,lH);
+      cout << "RETURNING FUN NAME: " << lambdaPtrReg << endl;
       return lambdaPtrReg;
     }
 };
@@ -673,6 +675,16 @@ class Funcall :public Exp {
       arg = a;
       ASTchild(funexp);
       ASTchild(arg);
+    }
+
+    string eval(Frame* ST, Context* con){
+      string argReg = arg->eval(ST,con);
+      string funPtrAs64 = funexp->eval(ST,con);
+      string callResultReg = con->nextRegister();
+      string funPtr = con->nextRegister();
+      resout << "    " << funPtr << " = inttoptr i64" << funPtrAs64 << " to i64 (i64)*" << endl;
+      resout << "    " << callResultReg << " =  call i64 " << funPtr << " ( i64 "<< argReg <<  ")";
+      return callResultReg;
     }
 };
 
