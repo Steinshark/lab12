@@ -108,6 +108,12 @@ void writeLambdas(Context* con){
     string varName = "%" + fName + "var";
     //start the defintion!!
     resout << "define i64 @" << fName << " (i64 " << varName << "){" << endl;
+
+    //build a local version of the register
+    string localVarPtr = con->nextRegister();
+    resout << "    " << localVarPtr << " = alloca i64" << endl;
+    resout << "    " << "store i64 " << varName << ", i64* " << localVarPtr << endl;
+
     bodyStmt->exec(lambda->refFrame,con);
     bodyStmt->getNext()->exec(lambda->refFrame,con);
     //TEMP
