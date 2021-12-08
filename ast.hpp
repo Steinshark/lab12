@@ -106,7 +106,7 @@ class Id :public Exp {
     string eval(Frame* ST,Context* con){
         //perform a lookup to find the pointer register
         string valueRegister = ST->lookup(val);
-
+        
         //load the pointer register into a working register and send that up!
         string workingRegister = con->nextRegister();
         resout << "    " << workingRegister <<  " = load i64, i64* " << valueRegister << endl;
@@ -646,14 +646,16 @@ class Lambda :public Exp {
       string lambdaPtrReg = con->nextRegister();
       resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
+      //ST->bind(var->getVal(),var )
       //save this info for later
       lambdaHolder* lH = new lambdaHolder;
       lH->funName = fName;
       lH->body = body;
-      lH->refFrame = ST;
+      lH->refFrame = new Frame(ST);
       lH->varName = var->getVal();
       lH->lambda = this;
 
+      //add the new local variable to the new refFrame
       //add the function-struct pair to the map
       con->bindLambda(fName,lH);
       return lambdaPtrReg;
@@ -673,6 +675,16 @@ class Funcall :public Exp {
       arg = a;
       ASTchild(funexp);
       ASTchild(arg);
+    }
+
+    string eval(Frame* ST, Context* con){
+      string argReg = arg->eval(ST,con);
+      string funPtrAs64 = funexp->eval(ST,con);
+      string callResultReg = con->nextRegister();
+      string funPtr = con->nextRegister();
+      resout << "    " << funPtr << " = inttoptr i64" << funPtrAs64 << " to i64 (i64)*" << endl;
+      resout << "    " << callResultReg << " =  call i64 " << funPtr << " ( i64 "<< argReg <<  ")";
+      return callResultReg;
     }
 };
 

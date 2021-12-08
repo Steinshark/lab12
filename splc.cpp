@@ -96,26 +96,38 @@ void writeLambdas(Context* con){
 
   auto ptr = con->lStructs.begin();
   while(ptr != con->lStructs.end()){
-    //get the function name
+    //get the mapping
     string fName = ptr->first;
-    //get the struct holding everything we need
-    lambdaHolder* lambda = ptr->second;
+    lambdaHolder* lambdaContainerStruct = ptr->second;
     //grab the bodyStmt of the lambda
-    Stmt* bodyStmt = lambda->body;
+    Stmt* bodyStmt = lambdaContainerStruct->body;
     //grab the literal string variable name
-    string var = lambda->varName;
+    string argLiteralName = lambdaContainerStruct->varName;
     //build the register that holds the argument
-    string varName = "%" + fName + "var";
+    string argRegister = "%" + fName + "var";
+    //grab the reference frame
+    Frame* refFrame = lambdaContainerStruct->refFrame;
     //start the defintion!!
-    resout << "define i64 @" << fName << " (i64 " << varName << "){" << endl;
+    resout << "define i64 @" << fName << " (i64 " << argRegister << "){" << endl;
 
-    //build a local version of the register
-    string localVarPtr = con->nextRegister();
-    resout << "    " << localVarPtr << " = alloca i64" << endl;
-    resout << "    " << "store i64 " << varName << ", i64* " << localVarPtr << endl;
+    // implement the argument (register) as a functioning variable
+    string argPtr = con->nextRegister();
 
-    bodyStmt->exec(lambda->refFrame,con);
-    bodyStmt->getNext()->exec(lambda->refFrame,con);
+    // make a pointer which the argReg will be mapped to
+    resout << "    " << argPtr << " = alloca i64" << endl;
+    // store the argument in the new Ptr
+    resout << "    " << "store i64 " << argRegister << ", i64* " << argPtr << endl;
+
+    // map the arg literal name to the newly made argument pointer
+    resout << ";BOUND FUN LOCAL " << argLiteralName << " to " << argPtr << endl;
+    refFrame->bind(argLiteralName,argPtr);
+
+    //also, make a binding for the return value
+    // write the code for the function
+    bodyStmt->exec(refFrame,con);
+    bodyStmt->getNext()->exec(refFrame,con);
+
+
     //TEMP
     resout << "    ret i64 0\n";
     //TEMP
