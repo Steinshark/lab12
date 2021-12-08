@@ -106,7 +106,7 @@ class Id :public Exp {
     string eval(Frame* ST,Context* con){
         //perform a lookup to find the pointer register
         string valueRegister = ST->lookup(val);
-        
+
         //load the pointer register into a working register and send that up!
         string workingRegister = con->nextRegister();
         resout << "    " << workingRegister <<  " = load i64, i64* " << valueRegister << endl;
@@ -601,6 +601,23 @@ class Debug :public Stmt {
     Debug(const string& themsg) {
       msg = themsg;
     }
+    void exec(Frame* ST, Context* con){
+        // Global constant name
+        string stringConst = con->nextString();
+
+        // Map the global name to the literal string
+        // Well define it at the end much like building
+        // lambdas
+        con->debugs[msg] = stringConst;
+
+        // Build the call to printf
+        string strSize =to_string(msg.length() + 2);
+        string arg = "getelementptr inbounds ([" + strSize+  " x i8], [ " + strSize + " x i8]*" + stringConst + ", i64 0, i64 0)";
+        resout << "    call i32(i8*,...) @printf(i8* " + arg +  ")" << endl;
+
+        // And keep going
+        getNext()->exec(ST, con);
+    }
 };
 
 /* A single expression as a statement. */
@@ -633,6 +650,12 @@ class Lambda :public Exp {
       ASTchild(var);
       ASTchild(body);
     }
+    void writeHigherBindings(Frame* ST){
+        Frame* cur = ST;
+        while(cur->parent != NULL){
+            
+        }
+    }
 
     // These getter methods are necessary to support actually calling
     // the lambda sometime after it gets created.
@@ -646,7 +669,6 @@ class Lambda :public Exp {
       string lambdaPtrReg = con->nextRegister();
       resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
-      //ST->bind(var->getVal(),var )
       //save this info for later
       lambdaHolder* lH = new lambdaHolder;
       lH->funName = fName;
@@ -687,5 +709,7 @@ class Funcall :public Exp {
       return callResultReg;
     }
 };
+
+
 
 #endif //AST_HPP

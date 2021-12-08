@@ -17,6 +17,7 @@ colorout errout(2, 'r');
 
 Stmt* tree = nullptr;
 void writeLambdas(Context*);
+void writeStrings(Context*);
 
 int main(int argc, char** argv) {
   // 0, 1, and 2 correspond to stdin, stdout, and stderr respectively.
@@ -53,6 +54,7 @@ int main(int argc, char** argv) {
          // my stuff
          << "@.str = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1" << endl
          << "@.int = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1" << endl
+
          << "declare i32 @scanf(i8*,...)" << endl;
          // end my stuff
 
@@ -84,6 +86,7 @@ int main(int argc, char** argv) {
   resout << "    ret i32 0" << endl
          << "}" << endl;
   writeLambdas(&gcon);
+  writeStrings(&gcon);
   // cleanup
   if (argc >= 2) fclose(yyin);
   for (Stmt* node : program) delete node;
@@ -96,42 +99,70 @@ void writeLambdas(Context* con){
 
   auto ptr = con->lStructs.begin();
   while(ptr != con->lStructs.end()){
-    //get the mapping
+    // Get the mapping
     string fName = ptr->first;
     lambdaHolder* lambdaContainerStruct = ptr->second;
-    //grab the bodyStmt of the lambda
+    // Grab the bodyStmt of the lambda
     Stmt* bodyStmt = lambdaContainerStruct->body;
-    //grab the literal string variable name
+    // Grab the literal string variable name
     string argLiteralName = lambdaContainerStruct->varName;
-    //build the register that holds the argument
+    // Build the register that holds the argument
     string argRegister = "%" + fName + "var";
-    //grab the reference frame
+    // Grab the reference frame
     Frame* refFrame = lambdaContainerStruct->refFrame;
-    //start the defintion!!
+    // Start the defintion!!
     resout << "define i64 @" << fName << " (i64 " << argRegister << "){" << endl;
 
-    // implement the argument (register) as a functioning variable
+    // Implement the argument (register) as a functioning variable
     string argPtr = con->nextRegister();
 
-    // make a pointer which the argReg will be mapped to
+    // Make a pointer which the argReg will be mapped to
+    resout << "    ;Binding fun argument" << endl;
     resout << "    " << argPtr << " = alloca i64" << endl;
-    // store the argument in the new Ptr
+    // Store the argument in the new Ptr
     resout << "    " << "store i64 " << argRegister << ", i64* " << argPtr << endl;
 
-    // map the arg literal name to the newly made argument pointer
-    resout << ";BOUND FUN LOCAL " << argLiteralName << " to " << argPtr << endl;
+    // Map the arg literal name to the newly made argument pointer
     refFrame->bind(argLiteralName,argPtr);
 
-    //also, make a binding for the return value
-    // write the code for the function
+
+    // Also, make a binding for the return value
+    resout << "    ;Binding return value, init to 0\n";
+    string retPtr = con->nextRegister();
+    resout << "    " << retPtr << " = alloca i64";
+    resout << "    " << "store i64 0, i64* " << retPtr << endl;
+    refFrame->bind("ret",retPtr);
+    // Write the code for the function
     bodyStmt->exec(refFrame,con);
     bodyStmt->getNext()->exec(refFrame,con);
 
 
-    //TEMP
-    resout << "    ret i64 0\n";
-    //TEMP
+    // load return value and yeet that boi off!
+    string retValReg = con->nextRegister();
+    resout << "    " << retValReg << "= load i64, i64* " << retPtr << endl;
+    resout << "    ret i64  " << retValReg <<  endl;
+
+    // All done, next
     resout << "}\n";
     ptr++;
       }
+}
+void writeStrings(Context* con){
+    auto ptr = con->debugs.begin();
+    while(ptr != con->debugs.end()){
+        // Gather mpa components
+        string baseString = ptr->first;
+        string stringReg = ptr->second;
+
+        // Calc string size
+        int strConstSize = baseString.length() + 2;
+
+        // Declare the string as a global constant
+        string literal = "c\"" + baseString + "\\0A\\00\"";
+        resout << stringReg << " = private unnamed_addr constant [" << strConstSize << "x i8] " << literal << ", align 1\n";
+
+        //下个。。。
+        ptr++;
+    }
+
 }

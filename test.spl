@@ -1,3 +1,4 @@
-new externVar := 3;
-new x := lambda g { g := 2 + g; write g; };
-x@20;
+new fib := lambda n {write n;};
+"just built the function"
+write fib@5;
+"just called the function"

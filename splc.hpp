@@ -9,6 +9,7 @@
 
 #include "colorout.hpp"
 #include "frame.hpp"
+#include <vector>
 using namespace std;
 
 // forward declarations
@@ -30,6 +31,7 @@ struct lambdaHolder{
 
 };
 
+
 // This class holds the context for AST evaluation
 // Right now, it just keeps track of register or label names to use
 class Context {
@@ -37,9 +39,11 @@ class Context {
     int regcount = 0;
     int brcount  = 0;
     int funcount = 0;
+    int strcount = 0;
 
   public:
     map<string,lambdaHolder*> lStructs;
+    map<string,string> debugs;
     // returns a series of unique register names like
     // "%v1", "%v2", etc.
     string nextRegister() {
@@ -51,7 +55,9 @@ class Context {
     string nextFunction(){
 	return "fun" + to_string(++funcount);
     }
-    //
+    string nextString(){
+	return "@." + to_string(++funcount);
+    }
     void bindLambda(string fName, lambdaHolder* lH){
     	if(lStructs.count(fName) == 0){
         	lStructs[fName] = lH;
