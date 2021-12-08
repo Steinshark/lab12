@@ -22,10 +22,8 @@ class Frame {
   private:
     // The actual map. It is declared private, so it can only
     // be accessed via the public methods below.
-    map<string,string> bindings;
 
     // Pointer to the parent Frame
-    Frame* parent;
 
     // finds the closest frame with the given name, searching
     // parents frames as necessary.
@@ -39,6 +37,8 @@ class Frame {
     }
 
   public:
+      Frame* parent;
+      map<string,string> bindings;
     // Creates a new, empty symbol table
     Frame(Frame* par) {
       parent = par;

@@ -651,9 +651,17 @@ class Lambda :public Exp {
       ASTchild(body);
     }
     void writeHigherBindings(Frame* ST){
-        Frame* cur = ST;
-        while(cur->parent != NULL){
-            
+        Frame* framePtr = ST;
+        while(framePtr->parent != NULL){
+            auto frameBindingEntry = framePtr->parent->bindings.begin();
+            while(frameBindingEntry != framePtr->parent->bindings.end()){
+                string variableName     = frameBindingEntry->first;
+                string variablePointer  = frameBindingEntry->second;
+
+                cout << variableName << " stored in " << variablePointer << endl; \
+                frameBindingEntry++;
+            }
+            framePtr = framePtr->parent;
         }
     }
 
@@ -667,6 +675,8 @@ class Lambda :public Exp {
       //at the end;
       string fName = con->nextFunction();
       string lambdaPtrReg = con->nextRegister();
+      //cout << "currently in lambda " << var << endl;
+      //this->writeHigherBindings(ST);
       resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
       //save this info for later
@@ -704,7 +714,7 @@ class Funcall :public Exp {
       string funPtrAs64 = funexp->eval(ST,con);
       string callResultReg = con->nextRegister();
       string funPtr = con->nextRegister();
-      resout << "    " << funPtr << " = inttoptr i64" << funPtrAs64 << " to i64 (i64)*" << endl;
+      resout << "    " << funPtr << " = inttoptr i64 " << funPtrAs64 << " to i64 (i64)*" << endl;
       resout << "    " << callResultReg << " =  call i64 " << funPtr << " ( i64 "<< argReg <<  ")";
       return callResultReg;
     }

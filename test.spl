@@ -1,4 +1,1 @@
-new fib := lambda n {write n;};
-"just built the function"
-write fib@5;
-"just called the function"
+write sqrt@169;
