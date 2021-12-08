@@ -1,1 +1,2 @@
-write sqrt@169;
+new f := 3;
+write regUse@3;

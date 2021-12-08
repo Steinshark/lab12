@@ -52,11 +52,12 @@ int main(int argc, char** argv) {
          << "declare i32 @printf(i8*,...)" << endl
          << "declare i32 @rand()" << endl
          << "declare double @sqrt(double)" << endl
+         << "declare i64 @regUse()" << endl
 
          // my stuff
          << "@.str = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1" << endl
          << "@.int = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1" << endl
-
+         << "@globalVar = global i64 0" << endl
          << "declare i32 @scanf(i8*,...)" << endl;
          // end my stuff
 
@@ -70,6 +71,8 @@ int main(int argc, char** argv) {
   resout << "define i32 @main() {" << endl;
 
   // for builtins
+  resout << "    " << "%regCounterPtr = alloca i64" << endl;
+
   string randMemPtrLoc = gcon.nextRegister();
   string randPtrReg = gcon.nextRegister();
   resout << "    " << randPtrReg << " = ptrtoint i64(i64)* @" << "randBuiltIn" << " to i64\n";
@@ -85,6 +88,14 @@ int main(int argc, char** argv) {
   resout << "    " << "store i64 " << sqrtPtrReg << ", i64* " << sqrtMemPtrLoc << endl;
   gframe.bind("sqrt",sqrtMemPtrLoc);
 
+
+  string regUseMemPtrLoc = gcon.nextRegister();
+  string regUsePtrReg = gcon.nextRegister();
+  string regCounterPtr = "regCounterPtr";
+  resout << "    " << regUsePtrReg << " = ptrtoint i64()* @" << "regUseBuiltIn" << " to i64\n";
+  resout << "    " << regUseMemPtrLoc << " = alloca i64" << endl;
+  resout << "    " << "store i64 " << regUsePtrReg << ", i64* " << regUseMemPtrLoc << endl;
+  gframe.bind("regUse",regUseMemPtrLoc);
 
   // loop to read in program statements, one at a time
   tree = nullptr;
@@ -237,6 +248,16 @@ void writeBuiltins(Context* con){
 
 
     resout << "    " << "ret i64 " << sqrtExtendedRand << endl;
+    resout << "}" << endl << endl;
+
+
+    // regUse FUNCTION
+    resout << "define i64 @regUseBuiltIn (){" << endl;
+    resout << "    " << "store i64 3, i64* @globalVar " << endl;
+    //string returnRegister = con->nextRegister();
+    //resout << "    " << returnRegister << " = load i64, i64* %regCounterPtr" << endl;
+
+    resout << "    " << "ret i64 " << "0" << endl;
     resout << "}" << endl << endl;
 
 

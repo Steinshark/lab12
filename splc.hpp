@@ -21,6 +21,7 @@ extern colorout resout;
 extern colorout errout;
 extern Stmt* tree;
 
+
 // Holds everything pertinent for a future function call
 struct lambdaHolder{
 	string funName;
@@ -47,6 +48,7 @@ class Context {
     // returns a series of unique register names like
     // "%v1", "%v2", etc.
     string nextRegister() {
+      //resout << "    " << "store i64 " + to_string(regcount) + ", i64* %regCounterPtr" << endl;
       return "%v" + to_string(++regcount);
     }
     string nextLabel(){
