@@ -178,8 +178,8 @@ class CompOp :public Exp {
         string r = right->eval(ST, con);
 
         // Write operation
-        string dest = con->nextRegister();
-        resout << "    " << dest << " = icmp";
+        string preCastComparison = con->nextRegister();
+        resout << "    " << preCastComparison << " = icmp";
         switch(op) {
           case GT:
             resout << " sgt ";
@@ -207,9 +207,9 @@ class CompOp :public Exp {
         resout << "i64 " << l << " , " << r << endl;
 
         //convert the i1 to an i64
-        string final_dest = con->nextRegister();
-        resout << "    " << final_dest << " = zext i1 " << dest << " to i64      ; must cast from i1 to i64 " << endl;
-        return final_dest;
+        string postCastComparison = con->nextRegister();
+        resout << "    " << postCastComparison << " = zext i1 " << preCastComparison << " to i64      ; must cast from i1 to i64 " << endl;
+        return postCastComparison;
     }
 };
 
@@ -223,17 +223,15 @@ class BoolOp :public Exp {
   public:
     BoolOp(Exp* l, Oper o, Exp* r);
     string eval(Frame* ST, Context* con){
-
         if(true and true){resout << "\n;Building BoolOp instruction:\n";}
-
 
         //eval the right and left sides
         string l = left->eval(ST, con);
         string r = right->eval(ST, con);
 
         // Write operation
-        string dest = con->nextRegister();
-        resout << "    " << dest << " = ";
+        string returnRegister = con->nextRegister();
+        resout << "    " << returnRegister << " = ";
         switch(op) {
           case AND:
             resout << " and ";
@@ -251,12 +249,9 @@ class BoolOp :public Exp {
             exit(8);
         }
 
-        // **does not need conversion because anything we pass in
-        // will be an i64, and the result of a bitwise will be the
-        // same**
+        // finish writing and return register
         resout << "i64 " << l << " , " << r << endl;
-        return dest;
-
+        return returnRegister;
     }
 };
 
@@ -279,9 +274,7 @@ class NegOp :public Exp {
               string dest = con->nextRegister();
               resout << "    " << dest << " = ";
 
-              // **does not need conversion because anything we pass in
-              // will be an i64, and the result of a bitwise will be the
-              // same**
+              // Just multiply by -1
               resout << "mul i64 " << -1 << " , " << r << endl;
               return dest;
     }
@@ -322,32 +315,19 @@ class Read :public Exp {
     Read() { }
 
     string eval(Frame* ST, Context* con){
-
-        if(true and true){resout << "\n;Building READ instruction:\n";}
-
-
-        // first build an i32 to use as the storage site
+        if(true and true){resout << "    ;Building READ instruction:\n";}
+        // first build an i64 to use as the storage site
         string pointer = con->nextRegister();
-        resout << "    " << pointer << " = alloca i32   ; ptr to read into      \n";
-
+        resout << "    " << pointer << " = alloca i64   ; ptr to read into      \n";
 
         // build the actual call to scanf
         string dest = con->nextRegister();
-        resout << "    " << "call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i32 0, i32 0), i32*  " << pointer << ")\n";
+        resout << "    " << "call i64 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @longFormatString, i64 0, i64 0), i64*  " << pointer << ")\n";
 
-
-
-        // get it out of memory
-        if(true and true){resout << "    ;Retrieving from mem\n";}
+        // get it out of memory and send it out
         string value = con->nextRegister();
-        resout << "    " << value << " = load i32, i32* " << pointer << endl;
-
-
-        if(true and true){resout << "    ;Casting to i64\n";}
-        //convert to i64
-        string final_dest = con->nextRegister();
-        resout << "    " <<  final_dest << " = zext i32 " << value << " to i64\n";
-        return final_dest;
+        resout << "    " << value << " = load i64, i64* " << pointer << endl;
+        return value;
     }
 };
 
@@ -409,6 +389,7 @@ class Block :public Stmt {
     }
 
     void exec(Frame* ST, Context* con){
+        // just do it then do the next thing
         body->exec(new Frame(ST),con);
         getNext()->exec(ST, con);
     }
@@ -438,8 +419,8 @@ class IfStmt :public Stmt {
         if(true == true){resout << "\n;Building IfStmt\n";}
 
         //cast conditional to an i1
-        string conditional = con->nextRegister();
         resout << branchBegin << ":" << endl;
+        string conditional = con->nextRegister();
         resout << "    " << conditional << " = trunc i64 " << conditionalIntermediate << " to i1" << endl;
 
         //build the IfStmtlogic
@@ -452,18 +433,15 @@ class IfStmt :public Stmt {
         resout << "    " << "br label %" << branchMerge << endl;
 
         //execute if FALSE
-
         if(true == true){resout << "\n;---FALSE\n";}
         resout << branchFalse << ":" << endl;
         elseblock->exec(ST, con);
 
-        resout << "    " << "br label %" << branchMerge << endl;
         //bring us back home
+        resout << "    " << "br label %" << branchMerge << endl;
         if(true == true){resout << "\n;---END\n";}
         resout << branchMerge << ":" << endl;
-        getNext()->exec(ST,con);//used 2b end each stmt
-
-
+        getNext()->exec(ST,con);
     }
 };
 
@@ -675,8 +653,6 @@ class Lambda :public Exp {
       //at the end;
       string fName = con->nextFunction();
       string lambdaPtrReg = con->nextRegister();
-      //cout << "currently in lambda " << var << endl;
-      //this->writeHigherBindings(ST);
       resout << "    " << lambdaPtrReg << " = ptrtoint i64(i64)* @" << fName << " to i64\n";
 
       //save this info for later
@@ -710,13 +686,19 @@ class Funcall :public Exp {
     }
 
     string eval(Frame* ST, Context* con){
-      string argReg = arg->eval(ST,con);
-      string funPtrAs64 = funexp->eval(ST,con);
-      string callResultReg = con->nextRegister();
-      string funPtr = con->nextRegister();
-      resout << "    " << funPtr << " = inttoptr i64 " << funPtrAs64 << " to i64 (i64)*" << endl;
-      resout << "    " << callResultReg << " =  call i64 " << funPtr << " ( i64 "<< argReg <<  ")";
-      return callResultReg;
+        //load the argument value to a register
+        string argReg = arg->eval(ST,con);
+        // grab our lambda pointer
+        string funPtrAs64 = funexp->eval(ST,con);
+        // secure a register for saving the result
+        string callResultReg = con->nextRegister();
+        // cast to something we can work with
+        string funPtr = con->nextRegister();
+        resout << "    " << funPtr << " = inttoptr i64 " << funPtrAs64 << " to i64 (i64)*" << endl;
+        // do the call
+        resout << "    " << callResultReg << " =  call i64 " << funPtr << " ( i64 "<< argReg <<  ")";
+        // return the result
+        return callResultReg;
     }
 };
 

@@ -1,2 +1,3 @@
-new f := 3;
-write regUse@3;
+ifelse 10 < 2
+    {write lambda x { write x;}; }
+    {write 1;}

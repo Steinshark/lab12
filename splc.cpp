@@ -10,7 +10,7 @@
 #include "spl.tab.hpp"
 #include "ast.hpp"
 #include "frame.hpp"
-
+#include <string>
 // global variable declarations
 colorout resout(1, 'u');
 colorout errout(2, 'r');
@@ -55,10 +55,11 @@ int main(int argc, char** argv) {
          << "declare i64 @regUse()" << endl
 
          // my stuff
-         << "@.str = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1" << endl
+         << "@longFormatString = private unnamed_addr constant [4 x i8] c\"%ld\\00\", align 1" << endl
          << "@.int = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1" << endl
+         << "@regCounterPtr = global i64 0" << endl
          << "@globalVar = global i64 0" << endl
-         << "declare i32 @scanf(i8*,...)" << endl;
+         << "declare i64 @scanf(i8*,...)" << endl;
          // end my stuff
 
   // this is the root Frame to hold all global variable bindings
@@ -169,9 +170,9 @@ void writeLambdas(Context* con){
     }
 
 
+    // Store the argument in the new Ptr
     resout << "    ;Binding fun argument" << endl;
     resout << "    " << argPtr << " = alloca i64" << endl;
-    // Store the argument in the new Ptr
     resout << "    " << "store i64 " << argRegister << ", i64* " << argPtr << endl;
 
     // Map the arg literal name to the newly made argument pointer
@@ -222,13 +223,15 @@ void writeBuiltins(Context* con){
     // RAND FUNCTION
     resout << "define i64 @randBuiltIn (i64 %randarg){" << endl;
     string randomReg = con->nextRegister();
+    // c rand call
     resout << "    " << randomReg << " = call i32 @rand()" << endl;
-
+    // Z extension to an i64
     string randExtendedRand = con->nextRegister();
     resout << "    " << randExtendedRand << " = zext i32 " << randomReg << " to i64" << endl;
-
+    // srem os equivalent to mod
     string retReg = con->nextRegister();
     resout << "    " << retReg << " = srem i64 " << randExtendedRand << ", %randarg" << endl;
+    // return the final random value within the range
     resout << "    " << "ret i64 " << retReg << endl;
     resout << "}" << endl << endl;
 
@@ -236,28 +239,29 @@ void writeBuiltins(Context* con){
 
     // SQRT FUNCTION
     resout << "define i64 @sqrtBuiltIn (i64 %sqrtarg){" << endl;
-
+    // c function takes a double, so we need to cast
     string truncArg = con->nextRegister();
     resout << "    " << truncArg << " = sitofp i64 %sqrtarg to double" << endl;
-
+    // make the call with the new value
     string sqrtReg = con->nextRegister();
     resout << "    " << sqrtReg << " = call double @sqrt(double " << truncArg << ")" << endl;
-
+    // now cast double to i64 (i.e. the closest whole number)
     string sqrtExtendedRand = con->nextRegister();
     resout << "    " << sqrtExtendedRand << " = fptoui double " << sqrtReg << " to i64" << endl;
-
-
+    // return the value
     resout << "    " << "ret i64 " << sqrtExtendedRand << endl;
     resout << "}" << endl << endl;
 
 
-    // regUse FUNCTION
-    resout << "define i64 @regUseBuiltIn (){" << endl;
-    resout << "    " << "store i64 3, i64* @globalVar " << endl;
-    //string returnRegister = con->nextRegister();
-    //resout << "    " << returnRegister << " = load i64, i64* %regCounterPtr" << endl;
 
-    resout << "    " << "ret i64 " << "0" << endl;
+    // REGUSE FUNCTION - how many registers were used in the making of this program??
+    resout << "define i64 @regUseBuiltIn (){" << endl;
+    // registers used + 1
+    string nextReg = con->nextRegister();
+    // take it back now, yall
+    int regs = stoi((nextReg.substr(2,nextReg.length()-2)))-1;
+    // and send it on out
+    resout << "    " << "ret i64 " << regs << endl;
     resout << "}" << endl << endl;
 
 
