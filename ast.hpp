@@ -479,15 +479,12 @@ class WhileStmt :public Stmt {
         resout << ";DO" << endl;
         resout << workingBranch << ":" << endl;
         body->exec(ST,con);
-        getNext()->exec(ST,con);
         resout << "    " << "br label %" << startBranch << endl;
         resout << ";DO END" << endl;
 
-
         //inside MERGE
         resout << mergeBranch << ":" << endl;
-
-
+        getNext()->exec(ST,con);
 
     }
 };
