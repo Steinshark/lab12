@@ -20,74 +20,29 @@ define i32 @main() {
     %v6 = ptrtoint i64()* @regUseBuiltIn to i64
     %v5 = alloca i64
     store i64 %v6, i64* %v5
-
-;Building CompOp instruction:
-    %v7 = icmp slt i64 10 , 2
-    %v8 = zext i1 %v7 to i64      ; must cast from i1 to i64 
-    br label %b1   ;I was added in an IFELSE
-
-;Building IfStmt
-b1:
-    %v9 = trunc i64 %v8 to i1
-    br i1 %v9, label %b2, label %b3
-
-;---TRUE
-b2:
-    %v10 = ptrtoint i64(i64)* @fun1 to i64
-
+    %v7 = load i64, i64* %v5
+    %v9 = inttoptr i64 %v7 to i64 (i64)*
+    %v8 =  call i64 %v9 ( i64 2)
 ;Building write stmt
-    %v11 = bitcast [5 x i8]* @pfmt to i8*
-    call i32(i8*,...) @printf(i8* %v11, i64 %v10)
-    br label %b4
-
-;---FALSE
-b3:
-
-;Building write stmt
-    %v12 = bitcast [5 x i8]* @pfmt to i8*
-    call i32(i8*,...) @printf(i8* %v12, i64 1)
-    br label %b4
-
-;---END
-b4:
+    %v10 = bitcast [5 x i8]* @pfmt to i8*
+    call i32(i8*,...) @printf(i8* %v10, i64 %v8)
     ret i32 0
 }
-define i64 @fun1 (i64 %fun1var){
-;0x55d425124b40
-;rand stored in %v1
-%v14 = alloca i64
-;regUse stored in %v5
-%v15 = alloca i64
-;sqrt stored in %v3
-%v16 = alloca i64
-    ;Binding fun argument
-    %v13 = alloca i64
-    store i64 %fun1var, i64* %v13
-    ;Binding return value, init to 0
-    %v17 = alloca i64    store i64 0, i64* %v17
-    %v18 = load i64, i64* %v13
-
-;Building write stmt
-    %v19 = bitcast [5 x i8]* @pfmt to i8*
-    call i32(i8*,...) @printf(i8* %v19, i64 %v18)
-    %v20= load i64, i64* %v17
-    ret i64  %v20
-}
 define i64 @randBuiltIn (i64 %randarg){
-    %v21 = call i32 @rand()
-    %v22 = zext i32 %v21 to i64
-    %v23 = srem i64 %v22, %randarg
-    ret i64 %v23
+    %v11 = call i32 @rand()
+    %v12 = zext i32 %v11 to i64
+    %v13 = srem i64 %v12, %randarg
+    ret i64 %v13
 }
 
 define i64 @sqrtBuiltIn (i64 %sqrtarg){
-    %v24 = sitofp i64 %sqrtarg to double
-    %v25 = call double @sqrt(double %v24)
-    %v26 = fptoui double %v25 to i64
-    ret i64 %v26
+    %v14 = sitofp i64 %sqrtarg to double
+    %v15 = call double @sqrt(double %v14)
+    %v16 = fptoui double %v15 to i64
+    ret i64 %v16
 }
 
 define i64 @regUseBuiltIn (){
-    ret i64 26
+    ret i64 16
 }
 

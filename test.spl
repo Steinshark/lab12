@@ -1,3 +1,1 @@
-ifelse 10 < 2
-    {write lambda x { write x;}; }
-    {write 1;}
+write regUse@2;
